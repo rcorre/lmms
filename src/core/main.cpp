@@ -66,6 +66,7 @@
 #include "ImportFilter.h"
 #include "MainWindow.h"
 #include "ProjectRenderer.h"
+#include "MultiRender.h"
 #include "DataFile.h"
 #include "Song.h"
 
@@ -121,12 +122,16 @@ void printHelp()
 	printf( "LMMS %s\n"
 		"Copyright (c) 2004-%s LMMS developers.\n\n"
 		"Usage: lmms [ -r <project file> ] [ options ]\n"
+		"            [ --render-tracks <project file> ] [ options ]\n"
 		"            [ -u <in> <out> ]\n"
 		"            [ -d <in> ]\n"
 		"            [ -h ]\n"
 		"            [ <file to load> ]\n\n"
 		"-r, --render <project file>	Render given project file\n"
-		"-o, --output <file>		Render into <file>\n"
+		"    --render-tracks <project file>	Render each track to a different file\n"
+		"-o, --output <file>		Render into <file|dir>\n"
+		"				For --render, provide a file path.\n"
+		"				For --render-tracks, provide a directory path.\n"
 		"-f, --output-format <format>	Specify format of render-output where\n"
 		"				Format is either 'wav' or 'ogg'.\n"
 		"-s, --samplerate <samplerate>	Specify output samplerate in Hz\n"
@@ -172,6 +177,7 @@ int main( int argc, char * * argv )
 	bool exitAfterImport = false;
 	bool allowRoot = false;
 	bool renderLoop = false;
+	bool renderTracks = false;
 	QString fileToLoad, fileToImport, renderOut, profilerOutputFile;
 
 	// first of two command-line parsing stages
@@ -184,6 +190,11 @@ int main( int argc, char * * argv )
 		    arg == "--render"  || arg == "-r" )
 		{
 			coreOnly = true;
+		}
+		else if( arg == "--render-tracks")
+		{
+			coreOnly = true;
+			renderTracks = true;
 		}
 		else if( arg == "--allowroot" )
 		{
@@ -288,7 +299,7 @@ int main( int argc, char * * argv )
 
 			return EXIT_SUCCESS;
 		}
-		else if( arg == "--render" || arg == "-r" )
+		else if( arg == "--render" || arg == "-r" || arg == "--render-tracks" )
 		{
 			++i;
 
@@ -301,7 +312,7 @@ int main( int argc, char * * argv )
 
 
 			fileToLoad = QString::fromLocal8Bit( argv[i] );
-			renderOut = baseName( fileToLoad ) + ".";
+			renderOut = baseName( fileToLoad );
 		}
 		else if( arg == "--loop-mode" || arg == "-l" )
 		{
@@ -319,7 +330,7 @@ int main( int argc, char * * argv )
 			}
 
 
-			renderOut = baseName( QString::fromLocal8Bit( argv[i] ) ) + ".";
+			renderOut = baseName( QString::fromLocal8Bit( argv[i] ) );
 		}
 		else if( arg == "--format" || arg == "-f" )
 		{
@@ -573,6 +584,8 @@ int main( int argc, char * * argv )
 	// without starting the GUI
 	if( !renderOut.isEmpty() )
 	{
+		// user has either requested --render or --render-tracks
+		// first perform common setup
 		Engine::init( true );
 
 		QFileInfo fileInfo( fileToLoad );
@@ -588,25 +601,44 @@ int main( int argc, char * * argv )
 
 		Engine::getSong()->setExportLoop( renderLoop );
 
-		// create renderer
-		QString extension = ( eff == ProjectRenderer::WaveFile ) ? "wav" : "ogg";
-		ProjectRenderer * r = new ProjectRenderer( qs, os, eff, renderOut + extension );
-		QCoreApplication::instance()->connect( r,
-				SIGNAL( finished() ), SLOT( quit() ) );
-
-		// timer for progress-updates
-		QTimer * t = new QTimer( r );
-		r->connect( t, SIGNAL( timeout() ),
-				SLOT( updateConsoleProgress() ) );
-		t->start( 200 );
-
 		if( profilerOutputFile.isEmpty() == false )
 		{
 			Engine::mixer()->profiler().setOutputFile( profilerOutputFile );
 		}
 
-		// start now!
-		r->startProcessing();
+		QString extension = ( eff == ProjectRenderer::WaveFile ) ? "wav" : "ogg";
+
+		if ( renderTracks )
+		{
+			// we are rendering each track to a separate file
+			MultiRender * mr = new MultiRender( qs, os, eff, renderOut );
+
+			// timer for progress-updates
+			QTimer * t = new QTimer( mr );
+			mr->connect( t, SIGNAL( timeout() ),
+					SLOT( updateConsoleProgress() ) );
+			t->start( 200 );
+
+			mr->start();
+		}
+		else 
+		{
+			// we are rendering all tracks to a single file
+			// create renderer
+			QString outPath = renderOut + "." + extension;
+			ProjectRenderer * r = new ProjectRenderer( qs, os, eff, outPath );
+			QCoreApplication::instance()->connect( r,
+					SIGNAL( finished() ), SLOT( quit() ) );
+
+			// timer for progress-updates
+			QTimer * t = new QTimer( r );
+			r->connect( t, SIGNAL( timeout() ),
+					SLOT( updateConsoleProgress() ) );
+			t->start( 200 );
+
+			// start now!
+			r->startProcessing();
+		}
 	}
 	else // otherwise, start the GUI
 	{
