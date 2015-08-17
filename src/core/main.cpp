@@ -613,12 +613,6 @@ int main( int argc, char * * argv )
 			// we are rendering each track to a separate file
 			MultiRender * mr = new MultiRender( qs, os, eff, renderOut );
 
-			// timer for progress-updates
-			QTimer * t = new QTimer( mr );
-			mr->connect( t, SIGNAL( timeout() ),
-					SLOT( updateConsoleProgress() ) );
-			t->start( 200 );
-
 			mr->start();
 		}
 		else 

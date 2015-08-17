@@ -45,11 +45,12 @@ public:
 
 	void start();
 
-public slots:
+private slots:
 	void updateConsoleProgress();
+	void renderNextTrack();
 
 private:
-	void renderTrack(const Track *track, int trackNum);
+	void renderTrack(Track *track);
 
 	const Mixer::qualitySettings & m_qualitySettings;
 	const ProjectRenderer::OutputSettings & m_outputSettings;
@@ -60,6 +61,8 @@ private:
 
 	typedef QVector<Track*> TrackVector;
 	TrackVector m_tracksToRender;
+	int m_trackNum;
+	int m_numTracks;
 } ;
 
 #endif

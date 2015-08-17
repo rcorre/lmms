@@ -22,7 +22,6 @@
  *
  */
 
-#include <QDebug>
 #include <QFileInfo>
 #include <QDir>
 #include <stdio.h>
@@ -44,7 +43,8 @@ MultiRender::MultiRender( const Mixer::qualitySettings & _qs,
 	m_ft( _file_format ),
 	m_outputDir( _output_dir ),
 	m_fileExtension( ProjectRenderer::getFileExtensionFromFormat( _file_format ) ),
-	m_activeRenderer( NULL )
+	m_activeRenderer( NULL ),
+	m_trackNum( 1 )
 {
 }
 
@@ -59,8 +59,9 @@ void MultiRender::start()
 		return; // we were not given a file format, give up
 	}
 
+	// Check for all unmuted tracks -- we will render these.
+	// Start by muting all of them, they will later be unmuted one at a time.
 	const TrackContainer::TrackList & tl = Engine::getSong()->tracks();
-	// Check for all unmuted tracks. Remember list.
 	for( TrackContainer::TrackList::ConstIterator it = tl.begin();
 							it != tl.end(); ++it )
 	{
@@ -71,6 +72,7 @@ void MultiRender::start()
 				( type == Track::InstrumentTrack || type == Track::SampleTrack ) )
 		{
 			m_tracksToRender.push_back(tk);
+			tk->setMuted( true );
 		}
 	}
 
@@ -81,41 +83,32 @@ void MultiRender::start()
 		if ( tk->isMuted() == false )
 		{
 			m_tracksToRender.push_back(tk);
+			tk->setMuted( true );
 		}
 	}
 
-	qDebug() << "starting render";
-	int trackNum = 1;
-	for( TrackContainer::TrackList::ConstIterator it = m_tracksToRender.begin();
-			 it != m_tracksToRender.end();
-			 ++it )
-	{
-		qDebug() << "rendering " << trackNum;
-		renderTrack(*it, trackNum++);
-	}
+	m_numTracks = m_tracksToRender.size();
+
+	renderTrack(m_tracksToRender.back());
 }
 
 void MultiRender::updateConsoleProgress()
 {
 	m_activeRenderer->updateConsoleProgress();
+	fprintf( stderr, "(%d/%d) ", m_trackNum, m_numTracks );
 }
 
-// Render one of the tracks from the song.
-void MultiRender::renderTrack(const Track * track, int trackNum)
+// Unmute and render the given track.
+void MultiRender::renderTrack(Track *track)
 {
+	track->setMuted( false );
+
 	// determine the path this track will be written to
 	QString trackName = track->name();
 	trackName = trackName.remove(QRegExp("[^a-zA-Z]"));
-	trackName = QString( "%1_%2%3" ).arg( trackNum ).arg( trackName ).arg( m_fileExtension );
+	trackName = QString( "%1_%2%3" )
+		.arg( m_trackNum ).arg( trackName ).arg( m_fileExtension );
 	QString outPath = QDir(m_outputDir).filePath(trackName);
-
-	// mute every track but the one we are about to render
-	for( TrackVector::ConstIterator it = m_tracksToRender.begin();
-			 it != m_tracksToRender.end();
-			 ++it )
-	{
-		(*it)->setMuted( (*it) == track );
-	}
 
 	// create a renderer for this track
 	m_activeRenderer = new ProjectRenderer( m_qualitySettings,
@@ -123,9 +116,30 @@ void MultiRender::renderTrack(const Track * track, int trackNum)
 	                                        m_ft,
 	                                        outPath );
 
-	// connect( renderer, SIGNAL( finished() ), this, SLOT( accept() ) );
+	// timer for progress-updates
+	QTimer * t = new QTimer( m_activeRenderer );
+	connect( t, SIGNAL( timeout() ), this, SLOT( updateConsoleProgress() ) );
+	t->start( 200 );
+
+	connect( m_activeRenderer, SIGNAL( finished() ), this,
+			SLOT( renderNextTrack() ) );
+
 	m_activeRenderer->startProcessing();
-	m_activeRenderer->wait();
+}
+
+// Pop the current track and render the next track.
+void MultiRender::renderNextTrack()
+{
+	// we just finished rendering the previous track
 	delete m_activeRenderer;
-	m_activeRenderer = NULL;
+	++m_trackNum;
+
+	if ( !m_tracksToRender.isEmpty() )
+	{
+		// mute and pop the track we just finished
+		m_tracksToRender.back()->setMuted( true );
+		m_tracksToRender.pop_back();
+
+		renderTrack(m_tracksToRender.back());
+	}
 }
