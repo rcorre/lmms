@@ -79,6 +79,7 @@ public:
 	static ExportFileFormats getFileFormatFromExtension(
 							const QString & _ext );
 
+	static QString getFileExtensionFromFormat( ExportFileFormats _format );
 
 public slots:
 	void startProcessing();

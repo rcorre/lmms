@@ -43,10 +43,9 @@ MultiRender::MultiRender( const Mixer::qualitySettings & _qs,
 	m_outputSettings( _os ),
 	m_ft( _file_format ),
 	m_outputDir( _output_dir ),
-	m_fileExtension( "ogg" ),
+	m_fileExtension( ProjectRenderer::getFileExtensionFromFormat( _file_format ) ),
 	m_activeRenderer( NULL )
 {
-
 }
 
 MultiRender::~MultiRender()
@@ -58,16 +57,6 @@ void MultiRender::start()
 	if( m_ft == ProjectRenderer::NumFileFormats )
 	{
 		return; // we were not given a file format, give up
-	}
-
-	// determine the output file extension based on the file format
-	for( int i = 0; i < ProjectRenderer::NumFileFormats; ++i )
-	{
-		if( m_ft == __fileEncodeDevices[i].m_fileFormat )
-		{
-			m_fileExtension = QString( QLatin1String( __fileEncodeDevices[i].m_extension ) );
-			break;
-		}
 	}
 
 	const TrackContainer::TrackList & tl = Engine::getSong()->tracks();

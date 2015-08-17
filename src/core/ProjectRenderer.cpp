@@ -122,6 +122,13 @@ ProjectRenderer::ExportFileFormats ProjectRenderer::getFileFormatFromExtension(
 }
 
 
+// little help-function for getting file-format from a file-extension (only for
+// registered file-encoders)
+QString ProjectRenderer::getFileExtensionFromFormat(
+							ProjectRenderer::ExportFileFormats _format )
+{
+	return __fileEncodeDevices[_format].m_extension;
+}
 
 
 void ProjectRenderer::startProcessing()
