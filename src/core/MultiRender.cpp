@@ -125,16 +125,16 @@ void MultiRender::renderTrack(Track *track)
 // Pop the current track and render the next track.
 void MultiRender::renderNextTrack()
 {
-	// we just finished rendering the previous track
+	// mute and pop the track we just finished
+	m_tracksToRender.back()->setMuted( true );
+	m_tracksToRender.pop_back();
+
 	delete m_activeRenderer;
 	++m_trackNum;
 
 	if ( !m_tracksToRender.isEmpty() )
 	{
-		// mute and pop the track we just finished
-		m_tracksToRender.back()->setMuted( true );
-		m_tracksToRender.pop_back();
-
+		// more tracks left to render
 		renderTrack(m_tracksToRender.back());
 	}
 }

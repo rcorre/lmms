@@ -52,8 +52,8 @@ private slots:
 private:
 	void renderTrack(Track *track);
 
-	const Mixer::qualitySettings & m_qualitySettings;
-	const ProjectRenderer::OutputSettings & m_outputSettings;
+	const Mixer::qualitySettings m_qualitySettings;
+	const ProjectRenderer::OutputSettings m_outputSettings;
 	ProjectRenderer::ExportFileFormats m_ft;
 	QString m_outputDir;
 	QString m_fileExtension;
