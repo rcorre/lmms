@@ -116,11 +116,6 @@ void MultiRender::renderTrack(Track *track)
 	                                        m_ft,
 	                                        outPath );
 
-	// timer for progress-updates
-	QTimer * t = new QTimer( m_activeRenderer );
-	connect( t, SIGNAL( timeout() ), this, SLOT( updateConsoleProgress() ) );
-	t->start( 200 );
-
 	connect( m_activeRenderer, SIGNAL( finished() ), this,
 			SLOT( renderNextTrack() ) );
 
