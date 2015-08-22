@@ -44,6 +44,12 @@ public:
 	virtual ~MultiRender();
 
 	void start();
+	void abortProcessing();
+	bool isRunning();
+
+signals:
+	void progressChanged( int );
+	void finished();
 
 private slots:
 	void updateConsoleProgress();

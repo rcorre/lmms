@@ -44,7 +44,7 @@ ExportProjectDialog::ExportProjectDialog( const QString & _file_name,
 	m_activeRenderer( NULL )
 {
 	setupUi( this );
-	setWindowTitle( tr( "Export project to %1" ).arg( 
+	setWindowTitle( tr( "Export project to %1" ).arg(
 					QFileInfo( _file_name ).fileName() ) );
 
 	// get the extension of the chosen file
@@ -100,6 +100,9 @@ void ExportProjectDialog::reject()
 	if( m_activeRenderer ) {
 		m_activeRenderer->abortProcessing();
 	}
+	if( m_multiRenderer ) {
+		m_multiRenderer->abortProcessing();
+	}
 
 	QDialog::reject();
 }
@@ -109,6 +112,9 @@ void ExportProjectDialog::reject()
 void ExportProjectDialog::closeEvent( QCloseEvent * _ce )
 {
 	if( m_activeRenderer && m_activeRenderer->isRunning() ) {
+		m_activeRenderer->abortProcessing();
+	}
+	if( m_multiRenderer ) {
 		m_activeRenderer->abortProcessing();
 	}
 
@@ -136,6 +142,11 @@ void ExportProjectDialog::renderTracks()
 	Engine::getSong()->setRenderBetweenMarkers( renderMarkersCB->isChecked() );
 
 	m_multiRenderer = new MultiRender( qs, os, m_ft, m_fileName );
+
+  connect( m_multiRenderer, SIGNAL( progressChanged( int ) ), progressBar, SLOT( setValue( int ) ) );
+  connect( m_multiRenderer, SIGNAL( progressChanged( int ) ), this, SLOT( updateTitleBar( int ) )) ;
+  connect( m_multiRenderer, SIGNAL( finished() ), this, SLOT( accept() ) );
+  connect( m_multiRenderer, SIGNAL( finished() ), gui->mainWindow(), SLOT( resetWindowTitle() ) );
 
 	m_multiRenderer->start();
 }

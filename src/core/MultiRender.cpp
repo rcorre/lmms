@@ -92,6 +92,22 @@ void MultiRender::start()
 	renderTrack(m_tracksToRender.back());
 }
 
+void MultiRender::abortProcessing()
+{
+	if (m_activeRenderer)
+	{
+		m_activeRenderer->abortProcessing();
+	}
+
+	m_tracksToRender.clear();
+}
+
+bool MultiRender::isRunning()
+{
+	return !m_tracksToRender.isEmpty() || 
+		m_activeRenderer != NULL && m_activeRenderer->isRunning();
+}
+
 void MultiRender::updateConsoleProgress()
 {
 	m_activeRenderer->updateConsoleProgress();
@@ -119,6 +135,10 @@ void MultiRender::renderTrack(Track *track)
 	connect( m_activeRenderer, SIGNAL( finished() ), this,
 			SLOT( renderNextTrack() ) );
 
+	// forward the progressChanged signal
+	connect( m_activeRenderer, SIGNAL( progressChanged(int) ), this,
+			SIGNAL( progressChanged(int) ) );
+
 	m_activeRenderer->startProcessing();
 }
 
@@ -130,9 +150,14 @@ void MultiRender::renderNextTrack()
 	m_tracksToRender.pop_back();
 
 	delete m_activeRenderer;
+	m_activeRenderer = NULL;
 	++m_trackNum;
 
-	if ( !m_tracksToRender.isEmpty() )
+	if ( m_tracksToRender.isEmpty() )
+	{
+		emit finished();
+	}
+	else
 	{
 		// more tracks left to render
 		renderTrack(m_tracksToRender.back());
