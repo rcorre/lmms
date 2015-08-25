@@ -215,7 +215,7 @@ int main( int argc, char * * argv )
 	{
 		printf( "LMMS cannot be run as root.\nUse \"--allowroot\" to override.\n\n" );
 		return EXIT_FAILURE;
-	}	
+	}
 #endif
 
 	QCoreApplication * app = coreOnly ?
@@ -278,7 +278,7 @@ int main( int argc, char * * argv )
 				printf( "\nOption \"--allowroot\" will be ignored on this platform.\n\n" );
 			}
 #endif
-			
+
 		}
 		else if( arg == "--dump" || arg == "-d" )
 		{
@@ -620,7 +620,7 @@ int main( int argc, char * * argv )
 
 			mr->start();
 		}
-		else 
+		else
 		{
 			// we are rendering all tracks to a single file
 			// create renderer

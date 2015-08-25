@@ -143,10 +143,10 @@ void ExportProjectDialog::renderTracks()
 
 	m_multiRenderer = new MultiRender( qs, os, m_ft, m_fileName );
 
-  connect( m_multiRenderer, SIGNAL( progressChanged( int ) ), progressBar, SLOT( setValue( int ) ) );
-  connect( m_multiRenderer, SIGNAL( progressChanged( int ) ), this, SLOT( updateTitleBar( int ) )) ;
-  connect( m_multiRenderer, SIGNAL( finished() ), this, SLOT( accept() ) );
-  connect( m_multiRenderer, SIGNAL( finished() ), gui->mainWindow(), SLOT( resetWindowTitle() ) );
+	connect( m_multiRenderer, SIGNAL( progressChanged( int ) ), progressBar, SLOT( setValue( int ) ) );
+	connect( m_multiRenderer, SIGNAL( progressChanged( int ) ), this, SLOT( updateTitleBar( int ) )) ;
+	connect( m_multiRenderer, SIGNAL( finished() ), this, SLOT( accept() ) );
+	connect( m_multiRenderer, SIGNAL( finished() ), gui->mainWindow(), SLOT( resetWindowTitle() ) );
 
 	m_multiRenderer->start();
 }
